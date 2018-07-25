@@ -1,0 +1,194 @@
+		PYTHON CODE
+
+
+training_data= [
+    ['Green',3,'Mango'],
+    ['Yellow',3,'Mango'],
+    ['Red',1,'Grape'],
+    ['Red',1,'Grape'],
+    ['Yellow',3,'Lemon']
+]
+
+#column Label
+header= ["color","diameter","label"]
+
+
+def unique_vals(rows,col):
+    """Find the unique values for a column in a dataset."""
+    return set([row[col] for row in rows])
+
+
+
+####
+#Demo:
+#unique_vals(training_data,0)    means we are checking data for color
+#unique_vals(training_data,1)  means we are checking data for diameter
+####
+
+def class_counts(rows):
+    """Counts the number of each type of example in a dataset."""
+    counts = {} #a dictionary for a Label -> count.
+    
+    for row in rows:
+        # in dataset, label is always the last column (GIVEN ONE)
+        label=row[-1]
+        if label not in counts:
+            counts[label]=0
+        counts[label] +=1
+    return counts
+    
+
+    
+####
+#Demo:
+# class_counts(training_data)
+####
+
+
+
+def is_numeric(value):
+    """Test if a value is numeric."""
+    return isinstance(value, int) or isinstance(value, float)
+
+####
+#DEMO:
+#is_numeric("7")                      #Yes
+#is_numeric("RED")                  #NO
+
+
+
+class Question:
+    """A question is used to partition a dataset.
+    
+    This class just records a 'column number' (e.g., 0 for color) and a
+    'columns value' (e.g., Green). The 'match' method is used to compare
+    the feature value in a example to the feature value stored in the 
+    question. See the demo below.
+    """
+    
+    def __init__(self,column,value):
+        self.column = column
+        self.value =value
+    
+    def match(self, example):
+        # Compare the feature value in a example to the 
+        # feature value in this question.
+        
+        val= example[self.column]
+        if is_numeric (val):
+            return val >= self.value
+        else:
+            return val == self.value
+    
+    def __repr__ (self):
+        #This is just a helper method to print
+        #the question in a readable format.
+        
+        condition = "=="
+        if is_numeric(self.value):
+            condition = ">="
+        return "Is %s %s %s?" % ( header[self.column],condition,str(self.value))
+    
+def partition(rows,question):
+        """Partitions a dataset.
+        
+        For each row in the dataset,check if it matches the question. If 
+        so, add it to 'true rows', otherwise , add it to 'false rows'.
+        """
+        true_rows, false_rows = [],[]
+        for row in rows:
+            if question.match(row):
+                
+                true_rows.append(row)
+            else:
+                false_rows.append(row)
+        return true_rows,false_rows
+####
+#Demo:
+# Lets partition the training data based on whether rowa are red.
+# true_rows, flase_rows = partition (training_data, Question (0,'Red'))
+# This will contain all the 'Red' rows.
+#true_rows
+#This will contain everything else.
+#false rows
+####
+
+
+def gini(rows):
+    """Calculate the Gini Impuirty for a list of rows."""
+    counts= class_count(rows)
+    impurity = 1
+    for lbl in counts:
+            prob_of_lbl = counts[lbl]/float(len(rows))
+            impurity -= prob_of_lbl**2
+            
+    return impurity
+    
+def info_gain(left,right,current_uncertainity):
+    """Information Gain.
+    
+    The uncertainity of the starting node, minus the weighted impuirty of
+    two child nodes.
+    """
+    p= float(len(left))/ (len(left)+ len(right))
+    v= current_uncertainity - p* gini(left)-(1-p)* gini(right)
+   
+    return v
+    
+####
+#Demo:
+#Calculate the uncertainity of our training data.
+#current_uncertinty = gini(training_data)
+#
+#How much information do we gain by partioning on 'Green'?
+#true_rows,false_rows = partition (training_data, Question(0,'Green'))
+#info_gain(true_rows,false_rows,current_uncertainty)
+# what if we want to partition to red?
+# true_rows,false_rows = partition (training_data, Question(0,'Red'))
+# info_gain(true_rows,false_rows,current_uncertainty
+
+
+
+if __name__ == "__main__":
+    
+    my_tree = build_tree(training_data)
+    
+    print_tree(my_tree)
+    
+    #Evaluate
+    testing_data =[
+        ['Green',3,'Mango'],
+        ['Yellow',4,'Apple'],
+        ['Red',2,'Grape'],
+        ['Red',1,'Grape'],
+        ['Yellow',3,'Mango'],
+    ]
+    
+    for row in testing_data:
+        print("Actual: %s. Predicted: %s" % (row[-1],print_leaf(classify(row,my_tree))))
+        
+    
+        
+
+
+
+
+Output:-
+
+
+
+Is diameter >= 3?
+--> True:
+ Is color == Yellow?
+ --> True:
+  Predict {'Mango': 1, 'Lemon': 1}
+ --> False:
+  Predict {'Mango': 1}
+--> False:
+ Predict {'Grape': 2}
+Actual: Mango. Predicted: {'Mango': '100%'}
+Actual: Apple. Predicted: {'Mango': '50%', 'Lemon': '50%'}
+Actual: Grape. Predicted: {'Grape': '100%'}
+Actual: Grape. Predicted: {'Grape': '100%'}
+Actual: Mango. Predicted: {'Mango': '50%', 'Lemon': '50%'}
+In [ ]:
